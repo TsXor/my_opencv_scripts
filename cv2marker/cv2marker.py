@@ -106,7 +106,7 @@ class newImageWindow:
                 cv2.rectangle(self.img, (self.zones[self.last_chosen].left, self.zones[self.last_chosen].top), (self.zones[self.last_chosen].right, self.zones[self.last_chosen].bottom), (0, 255, 0), 1);
             cv2.imshow(window_name, self.img)
 
-def nothing():
+def nothing(arg):
     pass
 if __name__ == '__main__':
     window = newImageWindow('image', 7/8, sys.argv[1], nothing, nothing)
