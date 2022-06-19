@@ -26,13 +26,16 @@ newImageWindow(window_name, window_size, imagefile, zonecallback, zonesupdatecal
 ```python
 import cv2marker
 import sys
+zones = []
 def zone_callback(zone):
-    print('左边界：x='+str(zone.left))
-    print('右边界：x='+str(zone.right))
-    print('上边界：y='+str(zone.top))
-    print('下边界：y='+str(zone.bottom))
-def zones_update_callback(zones):
-    print(zones)
+    global zones
+    print('左边界：x='+str(zones[zone].left))
+    print('右边界：x='+str(zones[zone].right))
+    print('上边界：y='+str(zones[zone].top))
+    print('下边界：y='+str(zones[zone].bottom))
+def zones_update_callback(upd_zones):
+    global zones
+    zones = upd_zones.copy()
 if __name__ == '__main__':
     window = cv2marker.newImageWindow('image', 7/8, sys.argv[1], zone_callback, zones_update_callback)
 ```
