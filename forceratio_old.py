@@ -51,7 +51,6 @@ class window_monitor:
                 if self.window_rect[0] == self.last_window_rect[0] and self.window_rect[1] == self.last_window_rect[1]:    #LT
                     print('lt')
                     win32gui.SetWindowPos(self.sys_wnd_handle, 0, self.window_rect[0], self.window_rect[1], self.winsize[0], self.winsize[1], win32con.SWP_NOZORDER)
-                    print(self.sys_wnd_handle, 0, self.window_rect[0], self.window_rect[1], self.winsize[0], self.winsize[1], win32con.SWP_NOZORDER)
                 elif self.window_rect[0] == self.last_window_rect[0] and self.window_rect[3] == self.last_window_rect[3]:    #LB
                     print('lb')
                     win32gui.SetWindowPos(self.sys_wnd_handle, 0, self.window_rect[0], self.window_rect[3]-self.winsize[1], self.winsize[0], self.winsize[1], win32con.SWP_NOZORDER)
