@@ -40,12 +40,13 @@ if __name__ == '__main__':
 test.py  <图片文件路径>
 ```
 
-### forceratio
-这个脚本需要作为模块使用，用于解决cv2.WINDOW_KEEPRATIO并不能使imshow窗口保持纵横比的问题
-原理：创建一个tkinter窗口，将imshow窗口设为此tkinter窗口的子窗口，tkinter窗口调整大小的同时调用回调函数调整imshow窗口的大小
-理论上也可用于其它任何窗口
-用法：
+### forceratio  
+这个脚本需要作为模块使用，用于解决cv2.WINDOW_KEEPRATIO并不能使imshow窗口保持纵横比的问题  
+原理：创建一个tkinter窗口，将imshow窗口设为此tkinter窗口的子窗口，tkinter窗口调整大小的同时调用回调函数调整imshow窗口的大小  
+理论上也可用于其它任何窗口  
+用法：  
 ```
+import forceratio
 forceratio_wnd = forceratio.start(window_class, window_name)
         #window_class: 目标窗口类名
         #window_name: 目标窗口名称
