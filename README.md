@@ -51,3 +51,7 @@ forceratio_wnd = forceratio.start(window_class, window_name)
         #window_class: 目标窗口类名
         #window_name: 目标窗口名称
 ```
+### forceratio_old
+`forceratio`的另一种实现，使用pynput监听左键松开的事件并将窗口“扳回正轨”  
+不用窗口套娃，但是bug较多，仅供参考（因为将pynput的监控线程放到新进程里的做法我个人感觉还挺有参考意义）  
+用法：不推荐用，自行研究，提示：差不多，也是用start方法  
