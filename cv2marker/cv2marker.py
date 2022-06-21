@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-import sys,win32api,win32con
+import sys, os, win32api, win32con
 from copy import *
 
 class zone:
@@ -20,12 +20,11 @@ class zone:
             return False
 
 class newImageWindow:
-    def __init__(self, window_name, window_size, imagefile, zonecallback, zonesupdatecallback):
+    def __init__(self, window_name, window_size, imagefile, zonecallback):
         #window_name: 字符串，窗口的名字
         #window_size: 分数，窗口占整个屏幕的比例
         #imagefile: 字符串，要显示的图片的路径
-        #zonecallback: 函数名，选中某个已经划定的区域时调用的函数，调用时提供的参数为选中的区域对象
-        #zonesupdatecallback: 函数名，“zones”列表更新时调用的函数，调用时提供的参数为列表本身
+        #zonecallback: 函数名，选中某个已经划定的区域时调用的函数，调用时提供的参数为选中的区域对象在列表中的序号
         self.imgorig = cv2.imdecode(np.fromfile(imagefile, dtype=np.uint8), cv2.IMREAD_COLOR)
         print('INFO: 图片尺寸：%sx%s'%(self.imgorig.shape[1], self.imgorig.shape[0]))
         if len(self.imgorig.shape) == 2:
@@ -45,13 +44,15 @@ class newImageWindow:
         else:
             self.imgratio = screenY*window_size/self.imgY
         cv2.resizeWindow(window_name, round(self.imgX*self.imgratio), round(self.imgY*self.imgratio))
-        cv2.setMouseCallback(window_name, self.mouse, [window_name, zonecallback, zonesupdatecallback])
+        cv2.setMouseCallback(window_name, self.mouse, [window_name, zonecallback])
         self.zone_declaring = 0 #此变量表示是否正在划定区域，是为1，不是为0
         self.curzone = [] #临时变量，没用
         self.zones = [] #此列表中包含所有已划定的区域（“区域”是下面的“zone”类）
         self.last_chosen = -1 #最近一次选中的区域，没有则为-1
+        self.winclass = 'Main HighGUI class'
+    def mainloop(self):
         cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        cv2.destroyWindow(window_name)
     def mouse_in_zone(self, curmouse):
         if len(self.zones) == 0:
            return -1
@@ -69,7 +70,6 @@ class newImageWindow:
         global zones
         window_name = param[0]
         zonecallback = param[1]
-        zonesupdatecallback = param[2]
         if event == cv2.EVENT_LBUTTONDOWN:
             #xy = "%d,%d" % (x, y)
             #cv2.putText(self.img, xy, (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 255), thickness = 1)
@@ -80,7 +80,7 @@ class newImageWindow:
                     self.last_chosen = miz_zone_num
                     self.img = self.img_last.copy()
                     cv2.rectangle(self.img, (self.zones[miz_zone_num].left, self.zones[miz_zone_num].top), (self.zones[miz_zone_num].right, self.zones[miz_zone_num].bottom), (0, 255, 0), 1);
-                    zonecallback(self.zones[miz_zone_num])
+                    zonecallback(miz_zone_num)
                 else:
                     cv2.circle(self.img, (x, y), 3, (0, 0, 255), thickness = -1)
                     self.zone_declaring = 1
@@ -91,7 +91,6 @@ class newImageWindow:
                 self.curzone.append((x,y))
                 zoneobj = zone(self.curzone[0], self.curzone[1])
                 self.add_zone(zoneobj)
-                zonesupdatecallback(self.zones)
                 self.curzone = []
         if event == cv2.EVENT_LBUTTONUP:
             cv2.imshow(window_name, self.img)
