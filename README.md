@@ -38,7 +38,7 @@ if __name__ == '__main__':
 ```
 test.py  <图片文件路径>
 ```
-注：创建一个newImageWindow类的对象后，要执行mainloop方法才能让其窗口存续（即不执行mainloop窗口就会一闪而过）。当然也有其他办法，比如将这个对象的窗口设为其他窗口的子窗口。这个的运用方式很像tkinter的mainloop，故名。
+注：创建一个newImageWindow类的对象后，要执行mainloop方法才能让其窗口存续（即不执行mainloop窗口就会一闪而过）。当然也有其他办法，比如将这个对象的窗口设为其他窗口的子窗口。这个的运用方式很像tkinter的mainloop，故名。（没错，和tk的mainloop一样，在窗口关闭之前，mainloop之后的代码不会被执行！）
 
 
 ### forceratio  
