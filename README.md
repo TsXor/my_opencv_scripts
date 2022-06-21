@@ -15,33 +15,31 @@ cv2marker.py  <图片文件路径>
 用法：
 ```
 新建一个窗口
-newImageWindow(window_name, window_size, imagefile, zonecallback, zonesupdatecallback):
+newImageWindow(window_name, window_size, imagefile, zonecallback):
         #window_name: 字符串，窗口名
         #window_size: 分数，窗口占整个屏幕的比例
         #imagefile: 字符串，要显示的图片的路径
         #zonecallback: 函数名，选中某个已经划定的区域时调用的函数，调用时提供的参数为选中的区域对象
-        #zonesupdatecallback: 函数名，“zones”列表更新时调用的函数，调用时提供的参数为列表本身
 ```
 使用例：`test.py`（与`cv2marker.py`在同一路径）
 ```python
 import cv2marker
 import sys
-zones = []
 def zone_callback(zone):
-    global zones
-    print('左边界：x='+str(zones[zone].left))
-    print('右边界：x='+str(zones[zone].right))
-    print('上边界：y='+str(zones[zone].top))
-    print('下边界：y='+str(zones[zone].bottom))
-def zones_update_callback(upd_zones):
-    global zones
-    zones = upd_zones.copy()
+    print(window.zones)
+    print('左边界：x='+str(window.zones[zone].left))
+    print('右边界：x='+str(window.zones[zone].right))
+    print('上边界：y='+str(window.zones[zone].top))
+    print('下边界：y='+str(window.zones[zone].bottom))
 if __name__ == '__main__':
-    window = cv2marker.newImageWindow('image', 7/8, sys.argv[1], zone_callback, zones_update_callback)
+    window = cv2marker.newImageWindow('image', 7/8, sys.argv[1], zone_callback)
+    window.mainloop()
 ```
 ```
 test.py  <图片文件路径>
 ```
+注：创建一个newImageWindow类的对象后，要执行mainloop方法才能让其窗口存续（即不执行mainloop窗口就会一闪而过）。当然也有其他办法，比如将这个对象的窗口设为其他窗口的子窗口。这个的运用方式很像tkinter的mainloop，故名。
+
 
 ### forceratio  
 这个脚本需要作为模块使用，用于解决cv2.WINDOW_KEEPRATIO并不能使imshow窗口保持纵横比的问题  
