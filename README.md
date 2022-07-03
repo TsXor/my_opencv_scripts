@@ -31,8 +31,10 @@ def zone_callback(zone):
     print('右边界：x='+str(window.zones[zone].right))
     print('上边界：y='+str(window.zones[zone].top))
     print('下边界：y='+str(window.zones[zone].bottom))
+def zucb(event):
+    print('event: %s'%event)
 if __name__ == '__main__':
-    window = cv2marker.newImageWindow('image', 7/8, sys.argv[1], zone_callback)
+    window = cv2marker.newImageWindow('image', 7/8, sys.argv[1], zone_callback, zucb)
     window.mainloop()
 ```
 ```
