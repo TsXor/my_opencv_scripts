@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import sys, os, win32api, win32con
 from copy import *
+import forceratio
+import tkinter as tk
 
 class zone:
     def __init__(self, pt1, pt2):
@@ -20,11 +22,12 @@ class zone:
             return False
 
 class newImageWindow:
-    def __init__(self, window_name, window_size, imagefile, zonecallback):
+    def __init__(self, window_name, window_size, imagefile, zonecallback, zonesupdatecallback):
         #window_name: 字符串，窗口的名字
         #window_size: 分数，窗口占整个屏幕的比例
         #imagefile: 字符串，要显示的图片的路径
         #zonecallback: 函数名，选中某个已经划定的区域时调用的函数，调用时提供的参数为选中的区域对象在列表中的序号
+        #zonesupdatecallback: 函数名，区域列表更新时调用的函数，调用时提供的参数为操作（新建：'new'、删除：'del'）
         self.imgorig = cv2.imdecode(np.fromfile(imagefile, dtype=np.uint8), cv2.IMREAD_COLOR)
         print('INFO: 图片尺寸：%sx%s'%(self.imgorig.shape[1], self.imgorig.shape[0]))
         if len(self.imgorig.shape) == 2:
@@ -33,6 +36,7 @@ class newImageWindow:
             self.img_init = self.imgorig.copy()
         self.img = self.img_init.copy()
         self.img_last = self.img.copy()
+        self.window_name = window_name
         cv2.namedWindow(window_name, cv2.WINDOW_KEEPRATIO)
         cv2.imshow(window_name, self.img)
         self.imgX = self.img.shape[1]
@@ -45,18 +49,33 @@ class newImageWindow:
             self.imgratio = screenY*window_size/self.imgY
         cv2.resizeWindow(window_name, round(self.imgX*self.imgratio), round(self.imgY*self.imgratio))
         cv2.setMouseCallback(window_name, self.mouse, [window_name, zonecallback])
+        self.zucb = zonesupdatecallback
         self.zone_declaring = 0 #此变量表示是否正在划定区域，是为1，不是为0
         self.curzone = [] #临时变量，没用
         self.zones = [] #此列表中包含所有已划定的区域（“区域”是下面的“zone”类）
         self.last_chosen = -1 #最近一次选中的区域，没有则为-1
         self.winclass = 'Main HighGUI class'
     def mainloop(self):
-        cv2.waitKey(0)
-        cv2.destroyWindow(window_name)
+        while True:
+            key_code = cv2.waitKey(1000)
+            if cv2.getWindowProperty(self.window_name, cv2.WND_PROP_VISIBLE) < 1: #当窗口关闭时为-1，显示时为0
+                break
+            if key_code != -1:
+                self.kbd(key_code)
+    def kbd(self, key_code):
+        #print('key {} pressed!!! value={}'.format(chr(key_code), key_code))
+        if key_code == 8:
+            if self.zone_declaring == 0:
+                self.del_zone(self.last_chosen)
+            else:
+                self.curzone = []
+                self.zone_declaring = 0
+                self.img = self.img_last.copy()
+                cv2.imshow(self.window_name, self.img)
     def mouse_in_zone(self, curmouse):
         if len(self.zones) == 0:
            return -1
-        for i in range (len(self.zones)):
+        for i in range(len(self.zones)):
             if self.zones[i].miz(curmouse):
                 return i
         return -1
@@ -66,6 +85,18 @@ class newImageWindow:
         self.zones.append(zone)
         cv2.rectangle(self.img_last, (zone.left, zone.top), (zone.right, zone.bottom), (0, 0, 255), 1)
         self.img = self.img_last.copy()
+        self.zucb('new')
+    def del_zone(self, zonenum):
+        if not zonenum in range(len(self.zones)):
+            return
+        self.zones.pop(zonenum)
+        self.img_last = self.img_init.copy()
+        self.last_chosen = -1
+        for zone in self.zones:
+            cv2.rectangle(self.img_last, (zone.left, zone.top), (zone.right, zone.bottom), (0, 0, 255), 1)
+        self.img = self.img_last.copy()
+        cv2.imshow(self.window_name, self.img)
+        self.zucb('del')
     def mouse(self, event, x, y, flags, param):
         global zones
         window_name = param[0]
@@ -108,4 +139,4 @@ class newImageWindow:
 def nothing(arg):
     pass
 if __name__ == '__main__':
-    window = newImageWindow('image', 7/8, sys.argv[1], nothing, nothing)
+    window = newImageWindow('image', 7/8, sys.argv[1], nothing)
