@@ -2,8 +2,6 @@ import cv2
 import numpy as np
 import sys, os, win32api, win32con
 from copy import *
-import forceratio
-import tkinter as tk
 
 class zone:
     def __init__(self, pt1, pt2):
