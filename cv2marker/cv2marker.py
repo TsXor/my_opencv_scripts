@@ -55,6 +55,22 @@ class newImageWindow:
         self.zones = [] #此列表中包含所有已划定的区域（“区域”是下面的“zone”类）
         self.last_chosen = -1 #最近一次选中的区域，没有则为-1
         self.winclass = 'Main HighGUI class'
+    def save_list(self):
+    #save_list可以将zones转化为纯列表，这样就可以以json格式保存zone信息
+    #执行save_list，返回纯列表
+        objlist = []
+        for zone in self.zones:
+            objlist.append([zone.left, zone.right, zone.top, zone.bottom])
+        return objlist
+    def load_list(self, objlist):
+    #load_list可以根据纯列表创建zone对象
+    #给load_list输入纯列表，zones中将添加对应的对象
+        for obj in objlist:
+            newz = zone((obj[0], obj[2]), (obj[1], obj[3]))
+            self.zones.append(newz)
+            cv2.rectangle(self.img_last, (obj[0], obj[2]), (obj[1], obj[3]), (0, 0, 255), 1)
+        self.img = self.img_last.copy()
+        cv2.imshow(self.window_name, self.img)
     def mainloop(self):
         while True:
             key_code = cv2.waitKey(1000)
@@ -85,6 +101,7 @@ class newImageWindow:
         self.zones.append(zone)
         cv2.rectangle(self.img_last, (zone.left, zone.top), (zone.right, zone.bottom), (0, 0, 255), 1)
         self.img = self.img_last.copy()
+        cv2.imshow(self.window_name, self.img)
         self.zucb('new')
     def del_zone(self, zonenum):
         if not zonenum in range(len(self.zones)):
@@ -139,4 +156,4 @@ class newImageWindow:
 def nothing(arg):
     pass
 if __name__ == '__main__':
-    window = newImageWindow('image', 7/8, sys.argv[1], nothing)
+    window = newImageWindow('image', 7/8, sys.argv[1], nothing, nothing)
