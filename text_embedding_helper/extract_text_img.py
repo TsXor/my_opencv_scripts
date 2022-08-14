@@ -1,4 +1,4 @@
-import sys,cv2,pickle,base64
+import sys,cv2,pickle,base64,getopt
 import numpy as np
 try:
     from PIL import Image
@@ -9,7 +9,23 @@ except ImportError:
 from psd_tools import PSDImage
 
 
-psd = PSDImage.open(sys.argv[1]); psdlayers = list(psd.descendants())
+argv = sys.argv[1:]
+psd_path = ''; out_path = ''
+try:
+  opts, args = getopt.getopt(argv, '-i:-o:', ['input=', 'output='])
+except getopt.GetoptError:
+  sys.exit(2)
+for opt, arg in opts:
+  if opt in ('-i', '--input'):
+    psd_path = arg
+  elif opt in ('-o', '--output'):
+    out_path = arg
+if not psd_path:
+  print('缺少输入路径'); sys.exit(2)
+if not out_path:
+  print('缺少输出路径'); sys.exit(2)
+
+psd = PSDImage.open(psd_path); psdlayers = list(psd.descendants())
 img = psdlayers[0].topil(); mask = psdlayers[1].topil(); maskpos = (psdlayers[1].top,psdlayers[1].left)
 imgarray = np.asarray(img.convert("RGBA")); maskarray = np.asarray(mask.convert("RGBA"))
 def padimgarray(img,size,pos):
@@ -38,7 +54,11 @@ def cvtarray(img,option):
 def binarray(img,threshold):
   result = cv2.threshold(cvtarray(img,'L'),threshold,255,cv2.THRESH_BINARY)
   return result[1]
-layeredimgarray = erasezeroalpha(maskimgarray(imgarray,maskarray,maskpos),(255,0,255))
+layeredimgarray = erasezeroalpha(maskimgarray(imgarray,maskarray,maskpos),(255,255,255))
 #layeredimg = Image.fromarray(binarray(layeredimgarray,100).astype('uint8')).convert('L')
 #layeredimg = Image.fromarray(layeredimgarray.astype('uint8')).convert('L')
-sys.stdout.write(base64.b64encode(pickle.dumps(binarray(layeredimgarray,100).astype('uint8'))).decode())
+if out_path == 'PIPE':
+  sys.stdout.write(base64.b64encode(pickle.dumps(binarray(layeredimgarray,100).astype('uint8'))).decode())
+else:
+  layeredimg = Image.fromarray(binarray(layeredimgarray,100).astype('uint8'))
+  layeredimg.save(out_path)
