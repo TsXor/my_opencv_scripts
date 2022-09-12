@@ -1,18 +1,31 @@
 ### 嵌字助手
-我为了简化嵌字过程做的一些...工具脚本  
-依赖：[ActionManager.py](https://github.com/TsXor/photoshop-ActionManager-python/blob/main/ActionManager.py) 放在同一目录  
-使用方法：
-1.  文字大小识别工具  
-  命令行执行：`pic2excel.bat <目标psd文件>`  
-  还有一个简单的方法：将psd拖到`pic2excel.bat`上面即可  
-  输入：一张已经抹掉字的黑白图片，psd格式，最下面是原图的图层，然后是一个涂抹的图层  
-  注意：这个脚本需要你手动在新图层中抹掉文字！  
-  ~~只能识别白底黑字的竖排文字，而且准头不佳，也会被那种注解小字干扰。~~  
-  现在不会被注解小字干扰了！误识别也减少了！但是仍然只能识别白底黑字的竖排文字  
-  下一次应该会加一个手动标记横排文字和黑底白字的功能  
-  现在，文字会被导出为excel表格，方便嵌字和翻译交流！  
-  纯opencv+numpy实现。未来会提升...吧？也许？？？  
-2.  文字加白边工具  
-  命令行执行它或者双击`text_white_border.py`。  
-  然后它会不断问你要加多少个像素的白边，每次你回答后，它就会将你当前选中的文字图层加上白边。  
-  没啥好说的，就是快，而且相对于动作来说可以指定像素数。  
+我为了简化嵌字过程做的工具脚本  
+
+#### 依赖
+```
+photoshop-python-api（我的fork）
+openpyxl
+click
+easyocr
+opencv-python
+numpy
+```
+如果您看到这个README时我的fork还是没能合入主线，那么请参照[wiki](https://github.com/loonghao/photoshop-python-api/wiki)进行源码安装：
+```bash
+git clone https://github.com/TsXor/photoshop-python-api/tree/action_manager_module_integration
+cd photoshop-python-api
+python setup.py install
+```
+
+#### 缺陷
+只能识别白底黑字的竖排文字  
+不打算自动识别别的类型，但是会允许手动标记黑底白字和竖排文字  
+
+#### 使用方法：
+暂时只有命令行  
+用`--help`参数执行procedure.py和utils.py查看帮助  
+- procedure.py  
+	- step1：处理图片并输出excel表格对接翻译  
+	- step2：读取excel表格并创建psd  
+- utils.py  
+	- whiteborder：帮助你给文字加白边  
