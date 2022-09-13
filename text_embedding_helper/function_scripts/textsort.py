@@ -27,7 +27,7 @@ def sediment(arr, axis=0):  # “沉淀”，保留备用
     return result
 
 
-def acompare_range(a, b, error=(0.9, 1.1)):  # 带误差地比较a和b
+def acompare_range(a, b, error=(0.8, 1.25)):  # 带误差地比较a和b
     return a > b * error[0] and a < b * error[1]
 def acompare_diff(a, b, error):  # 带误差地比较a和b
     return a > b - error and a < b + error
@@ -55,6 +55,17 @@ def bucket_check(zone, bucket):
             return True
     return False
 
+def zone_match(zone1, zone2):
+    if not acompare_range(zone1.width, zone2.width):
+        return False
+    aw = (zone1.width+zone2.width)/2
+    if not acompare_diff(zone1.top, zone2.top, aw*2):
+        return False
+    # 本来这里有个abs，但是下方的算法使我需要去掉它
+    xdis = zone1.axis-zone2.axis
+    if not acompare_range(xdis, aw, (0.5, 2.5)):
+        return False
+    return True
 
 def bucket2info(bucket):
     bucket = bucket_sort(bucket)
@@ -108,6 +119,9 @@ class zone:
     def draw(self, img, color=(255, 0, 0)):
         l, t, w, h = self.rect
         cv2.rectangle(img, (l, t), (l + w, t + h), color, 1)
+    def tag(self, img, color=(0, 255, 0), text=''):
+        l, t, w, h = self.rect
+        cv2.putText(img, text , (l, t), cv2.FONT_HERSHEY_COMPLEX, 1, color, 1)
     def __repr__(self):
         return "zone(rect=%s)" % repr(self.rect)
 
@@ -127,39 +141,65 @@ def main_api(texts):
     # 提取文字信息
     zones = [zone(contour=c) for c in contours]
     zones = bucket_sort(zones)
-    for z in zones:
+    #for z in zones:
+    #    z.draw(showc)
+    #    newbucket = True
+    #    for bucket in bucket_shelf:
+    #        if bucket_check(z, bucket):
+    #            bucket.append(z)
+    #            newbucket = False
+    #            break
+    #    if newbucket:
+    #        abucket = [z]
+    #        bucket_shelf.append(abucket)
+    #orphansidx = [i for i in range(len(bucket_shelf)) if len(bucket_shelf[i])==1]
+    #eraseorphan = []
+    #operated = True
+    #while operated:
+    #    operated = False
+    #    for oi in orphansidx:
+    #        z = bucket_shelf[oi][0]
+    #        for ei in range(len(bucket_shelf)):
+    #            if ei==oi:
+    #                continue
+    #            bkt = bucket_shelf[ei]
+    #            if bucket_check(z, bkt):
+    #                operated = True
+    #                bucket_shelf[ei].append(z)
+    #                eraseorphan.append(oi)
+    #                break
+    #    if operated:
+    #        for i in eraseorphan:
+    #            orphansidx.remove(i)
+    #offset = 0
+    #for i in eraseorphan:
+    #    bucket_shelf.pop(i+offset)
+    #    offset -= 1
+    for i in range(len(zones)):
+        z = zones[i]
         z.draw(showc)
-        newbucket = True
-        for bucket in bucket_shelf:
-            if bucket_check(z, bucket):
-                bucket.append(z)
-                newbucket = False
+        z.tag(showc, text=str(i))
+    matches = [[j for j in range(i+1, len(zones)) if zone_match(zones[i], zones[j])] for i in range(len(zones))]
+    r = list(range(len(zones)))
+    print(list(zip(r,matches)))
+    print([z.axis for z in zones])
+    chains = []
+    while r:
+        chain = []
+        idx = r.pop(0)
+        chain.append(idx)
+        nextl = matches[idx]
+        while nextl:
+            idx = nextl[0]
+            if idx not in r:
                 break
-        if newbucket:
-            abucket = [z]
-            bucket_shelf.append(abucket)
-    orphansidx = [i for i in range(len(bucket_shelf)) if len(bucket_shelf[i])==1]
-    elsesidx = [i for i in range(len(bucket_shelf)) if i not in orphansidx]
-    eraseorphan = []
-    operated = True
-    while operated:
-        operated = False
-        for oi in orphansidx:
-            z = bucket_shelf[oi][0]
-            for ei in elsesidx:
-                bkt = bucket_shelf[ei]
-                if bucket_check(z, bkt):
-                    operated = True
-                    bucket_shelf[ei].append(z)
-                    eraseorphan.append(oi)
-                    break
-        if operated:
-            for i in eraseorphan:
-                orphansidx.remove(i)
-    offset = 0
-    for i in eraseorphan:
-        bucket_shelf.pop(i+offset)
-        offset -= 1
+            if idx in chain:
+                break
+            chain.append(idx)
+            r.remove(idx)
+            nextl = matches[idx]
+        chains.append(chain)
+    bucket_shelf = [[zones[i] for i in chain] for chain in chains]
 
     # 构造表
     header = [

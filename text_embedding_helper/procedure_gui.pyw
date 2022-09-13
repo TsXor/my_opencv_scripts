@@ -67,7 +67,11 @@ class ProcedureGuiApp:
         for spara in sparas:
             spara = [str(p) for p in spara]
             self.writelog('处理%s'%spara[0])
-            globals()[name](*spara)
+            try:
+                globals()[name](*spara)
+            except BaseException as e:
+                tkmsgbox.showwarning('发生错误', str(e))
+                self.writelog('发生错误%s'%name)
         self.writelog('结束执行%s'%name)
 
 if __name__ == "__main__":
