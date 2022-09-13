@@ -8,33 +8,49 @@ import click, json
 def main():
     pass
 
-@main.command()
-@click.option('--op', help='input original picture file path', required=True)
-@click.option('--xl', help='out excel file path', required=True)
-def step1(inpath, xl):
+
+step1_loaded = False
+
+def step1_load():
+    global textocr, textsort, py2xl
     from function_scripts.textocr import main_api as textocr
     from function_scripts.textsort import main_api as textsort
     from lib_scripts.xloperate import py2xl
+    global step1_loaded
+    step1_loaded = True
+
+def step1_api(op, xl):
+    if not step1_loaded:
+        step1_load()
     
     Pim = Image.open(op)
     im = np.asarray(Pim)
-    det = textocr(im)
-    cover = np.where(det==255, 255, 0).astype('uint8')
-    text = np.where(det==255, im, 255)
-    xlsheet, markedtext = textsort(text)
+    texts, cover = textocr(im)
+    xlsheet, markedtext = textsort(texts)
     py2xl(xlsheet, xl, (20, 120, 30), extra=(('mask数据', cover),)) # xl is path
     Pmarkedtext = Image.fromarray(markedtext); Pmarkedtext.show()
 
-
 @main.command()
 @click.option('--op', help='input original picture file path', required=True)
-@click.option('--xl', help='input excel file path', required=True)
-@click.option('--psd', help='output psd file path', required=True)
-def step2(op, xl, psd):
+@click.option('--xl', help='out excel file path', required=True)
+def step1(*args, **kwargs):
+    step1_api(*args, **kwargs)
+
+
+step2_loaded = False
+
+def step2_load():
+    global ps, mktxlr, paste, moveto, xl2py, pathlib
     import photoshop.api as ps
     from lib_scripts.psoperate import mktxlr, paste, moveto
     from lib_scripts.xloperate import xl2py
     import pathlib
+    global step2_loaded
+    step2_loaded = True
+
+def step2_api(op, xl, psd):
+    if not step2_loaded:
+        step2_load()
     
     app = ps.Application()
     doc = app.open(op)
@@ -69,6 +85,13 @@ def step2(op, xl, psd):
     doc.saveAs(psd, options) # psd is path 
     doc.close()
     mp.unlink()
+
+@main.command()
+@click.option('--op', help='input original picture file path', required=True)
+@click.option('--xl', help='input excel file path', required=True)
+@click.option('--psd', help='output psd file path', required=True)
+def step2(*args, **kwargs):
+    step2_api(*args, **kwargs)
 
 
 if __name__ == "__main__":

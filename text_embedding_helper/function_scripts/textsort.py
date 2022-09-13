@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 
-morphclose_iternum = 15
+morphclose_iternum = 10
 x_axis = 0; y_axis = 1
 
 
@@ -27,40 +27,33 @@ def sediment(arr, axis=0):  # “沉淀”，保留备用
     return result
 
 
-def acompare(a, b, error=(0.9, 1.1)):  # 带误差地比较a和b
+def acompare_range(a, b, error=(0.9, 1.1)):  # 带误差地比较a和b
     return a > b * error[0] and a < b * error[1]
-
+def acompare_diff(a, b, error):  # 带误差地比较a和b
+    return a > b - error and a < b + error
 
 def bucket_sort(bucket):  # 这不是经典的“桶排序”，这只是“排序一个桶内的元素”
     assert bucket
     f = lambda zone: zone.axis
     return sorted(bucket, key=f, reverse=True)  # 反排，因为竖排文字从右到左
 
+def avg(l):
+    return sum(l)/len(l)
 
 def bucket_check(zone, bucket):
-    bucket = bucket_sort(bucket)
     assert bucket
-    l_width = [z.width for z in bucket]
-    aw = sum(l_width) / len(l_width)
-    if not acompare(zone.width, aw):
+    bucket = bucket_sort(bucket)
+    aw = avg([z.width for z in bucket])
+    if not acompare_range(zone.width, aw):
         return False
-    l_top = [z.top for z in bucket]
-    at = sum(l_top) / len(l_top)
-    if not acompare(zone.top, at):
+    at = avg([z.top for z in bucket])
+    if not acompare_diff(zone.top, at, aw*2):
         return False
-    first_zone = bucket[0]
-    last_zone = bucket[-1]
-    xdis = min(abs(first_zone.axis - zone.axis), abs(last_zone.axis - zone.axis))
-    if len(bucket) == 1:
-        dis = bucket[0].width * 1.5
-    else:
-        l_dis = []
-        for i in range(1, len(bucket)):
-            l_dis.append(bucket[i - 1].axis - bucket[i].axis)
-        dis = sum(l_dis) / len(l_dis)
-    if xdis >= dis * 2:
-        return False
-    return True
+    for z in bucket:
+        dis = abs(zone.axis-z.axis)
+        if acompare_range(dis, aw, (0.5, 2)):
+            return True
+    return False
 
 
 def bucket2info(bucket):
@@ -118,21 +111,24 @@ class zone:
     def __repr__(self):
         return "zone(rect=%s)" % repr(self.rect)
 
+def main_api(texts):
+    show = np.zeros(texts[0].shape, dtype=np.uint8)
+    contours = []
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 5))  # 只在竖直方向闭运算
+    bucket_shelf = []
+    for img in texts:
+        show = np.where(img>0, img, show)
+        imgmor = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel, iterations=morphclose_iternum)
+        contours += cv2.findContours(imgmor, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
 
-def main_api(img):
-    cv2.bitwise_not(img, img)  # 反相
-    imgc = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 3))  # 只在竖直方向闭运算
-    imgmor = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel, iterations=morphclose_iternum)
-    contours = cv2.findContours(imgmor, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
-    cv2.bitwise_not(img, img)  # 反相
+    show = cv2.bitwise_not(show)
+    showc = cv2.cvtColor(show, cv2.COLOR_GRAY2RGB)
 
     # 提取文字信息
-    bucket_shelf = []
-    for c in contours:
-        z = zone(contour=c)
-        z.draw(imgc)
-        # 分类
+    zones = [zone(contour=c) for c in contours]
+    zones = bucket_sort(zones)
+    for z in zones:
+        z.draw(showc)
         newbucket = True
         for bucket in bucket_shelf:
             if bucket_check(z, bucket):
@@ -142,6 +138,28 @@ def main_api(img):
         if newbucket:
             abucket = [z]
             bucket_shelf.append(abucket)
+    orphansidx = [i for i in range(len(bucket_shelf)) if len(bucket_shelf[i])==1]
+    elsesidx = [i for i in range(len(bucket_shelf)) if i not in orphansidx]
+    eraseorphan = []
+    operated = True
+    while operated:
+        operated = False
+        for oi in orphansidx:
+            z = bucket_shelf[oi][0]
+            for ei in elsesidx:
+                bkt = bucket_shelf[ei]
+                if bucket_check(z, bkt):
+                    operated = True
+                    bucket_shelf[ei].append(z)
+                    eraseorphan.append(oi)
+                    break
+        if operated:
+            for i in eraseorphan:
+                orphansidx.remove(i)
+    offset = 0
+    for i in eraseorphan:
+        bucket_shelf.pop(i+offset)
+        offset -= 1
 
     # 构造表
     header = [
@@ -153,10 +171,10 @@ def main_api(img):
     for bucket in bucket_shelf:
         info = bucket2info(bucket)
         l, t, w, h = bucket_rect(bucket)
-        info.update({'rect':[(l,t), (l+w,t+h)]})
-        cv2.rectangle(imgc, (l, t), (l + w, t + h), (0, 255, 0), 1)
-        imgslice = img[t : t + h, l : l + w]
+        info.update({'rect':[(l, t), (l+w, t+h)]})
+        cv2.rectangle(showc, (l, t), (l+w, t+h), (0, 255, 0), 1)
+        imgslice = show[t:t+h, l:l+w]
         row = [imgslice, '', json.dumps(info)]
         sheet.append(row)
 
-    return sheet, imgc
+    return sheet, showc

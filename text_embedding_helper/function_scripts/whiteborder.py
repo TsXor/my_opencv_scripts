@@ -2,7 +2,6 @@ import photoshop.api as ps
 import photoshop.api.action_manager as am
 import sys,json
 
-app = ps.Application()
 
 def build_exec_desc(ref, desc):
     xdesc = ps.ActionDescriptor()
@@ -11,6 +10,7 @@ def build_exec_desc(ref, desc):
     return xdesc
 
 def main_api(px):
+    app = ps.Application()
     ref = ps.ActionReference.load([
         '!ref',
         am.ReferenceKey('textLayer', am.Enumerated('ordinal', 'targetEnum'))

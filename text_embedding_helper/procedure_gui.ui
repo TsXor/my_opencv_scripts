@@ -1,0 +1,234 @@
+<?xml version='1.0' encoding='utf-8'?>
+<interface version="1.3">
+  <object class="tk.Toplevel" id="guitop" named="True">
+    <property name="height">200</property>
+    <property name="resizable">none</property>
+    <property name="width">200</property>
+    <child>
+      <object class="ttk.Notebook" id="notebook2">
+        <property name="height">200</property>
+        <property name="width">400</property>
+        <layout manager="grid">
+          <property name="column">0</property>
+          <property name="row">2</property>
+        </layout>
+        <child>
+          <object class="ttk.Notebook.Tab" id="tab1">
+            <property name="text" translatable="yes">step1</property>
+            <child>
+              <object class="ttk.Labelframe" id="procedure_step1" named="True">
+                <property name="cursor">arrow</property>
+                <property name="height">200</property>
+                <property name="takefocus">true</property>
+                <property name="text" translatable="yes">step1</property>
+                <property name="width">400</property>
+                <layout manager="pack" />
+                <child>
+                  <object class="ttk.Labelframe" id="s1_io" named="True">
+                    <property name="height">150</property>
+                    <property name="takefocus">false</property>
+                    <property name="text" translatable="yes">文件</property>
+                    <property name="width">400</property>
+                    <layout manager="pack">
+                      <property name="side">top</property>
+                    </layout>
+                    <containerlayout manager="grid">
+                      <property name="anchor">n</property>
+                    </containerlayout>
+                    <child>
+                      <object class="ttk.Label" id="s1_in" named="True">
+                        <property name="compound">top</property>
+                        <property name="takefocus">false</property>
+                        <property name="text" translatable="yes">输入图片</property>
+                        <layout manager="grid">
+                          <property name="column">0</property>
+                          <property name="padx">20</property>
+                          <property name="pady">6</property>
+                          <property name="row">0</property>
+                          <property name="sticky">n</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="ttk.Label" id="s1_out" named="True">
+                        <property name="text" translatable="yes">输出表格</property>
+                        <layout manager="grid">
+                          <property name="column">0</property>
+                          <property name="padx">20</property>
+                          <property name="pady">6</property>
+                          <property name="row">1</property>
+                          <property name="sticky">n</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="pygubu.builder.widgets.pathchooserinput" id="s1_in_box" named="True">
+                        <property name="textvariable">string:step1_in</property>
+                        <property name="type">directory</property>
+                        <layout manager="grid">
+                          <property name="column">1</property>
+                          <property name="ipadx">20</property>
+                          <property name="pady">2</property>
+                          <property name="row">0</property>
+                          <property name="sticky">nw</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="pygubu.builder.widgets.pathchooserinput" id="s1_out_box" named="True">
+                        <property name="textvariable">string:step1_out</property>
+                        <property name="type">directory</property>
+                        <layout manager="grid">
+                          <property name="column">1</property>
+                          <property name="ipadx">20</property>
+                          <property name="pady">2</property>
+                          <property name="row">1</property>
+                          <property name="sticky">nw</property>
+                        </layout>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="ttk.Button" id="s1_doit" named="True">
+                    <property name="command" type="command" cbtype="simple">do_step1</property>
+                    <property name="text" translatable="yes">执行</property>
+                    <layout manager="pack">
+                      <property name="side">top</property>
+                    </layout>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Notebook.Tab" id="tab2">
+            <property name="text" translatable="yes">step2</property>
+            <child>
+              <object class="ttk.Labelframe" id="procedure_step2" named="True">
+                <property name="cursor">arrow</property>
+                <property name="height">200</property>
+                <property name="takefocus">true</property>
+                <property name="text" translatable="yes">step2</property>
+                <property name="width">400</property>
+                <layout manager="pack" />
+                <child>
+                  <object class="ttk.Labelframe" id="s2_io" named="True">
+                    <property name="height">150</property>
+                    <property name="takefocus">false</property>
+                    <property name="text" translatable="yes">文件</property>
+                    <property name="width">400</property>
+                    <layout manager="pack">
+                      <property name="side">top</property>
+                    </layout>
+                    <containerlayout manager="grid">
+                      <property name="anchor">n</property>
+                    </containerlayout>
+                    <child>
+                      <object class="ttk.Label" id="s2_in_pic" named="True">
+                        <property name="compound">top</property>
+                        <property name="takefocus">false</property>
+                        <property name="text" translatable="yes">输入图片</property>
+                        <layout manager="grid">
+                          <property name="column">0</property>
+                          <property name="padx">20</property>
+                          <property name="pady">6</property>
+                          <property name="row">0</property>
+                          <property name="sticky">n</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="ttk.Label" id="s2_in_xl" named="True">
+                        <property name="text" translatable="yes">输入表格</property>
+                        <layout manager="grid">
+                          <property name="column">0</property>
+                          <property name="padx">20</property>
+                          <property name="pady">6</property>
+                          <property name="row">1</property>
+                          <property name="sticky">n</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="ttk.Label" id="s2_out" named="True">
+                        <property name="text" translatable="yes">输出psd</property>
+                        <layout manager="grid">
+                          <property name="column">0</property>
+                          <property name="padx">20</property>
+                          <property name="pady">6</property>
+                          <property name="row">2</property>
+                          <property name="sticky">n</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="pygubu.builder.widgets.pathchooserinput" id="s2_in_pic_box" named="True">
+                        <property name="textvariable">string:step2_in_pic</property>
+                        <property name="type">directory</property>
+                        <layout manager="grid">
+                          <property name="column">1</property>
+                          <property name="ipadx">20</property>
+                          <property name="pady">2</property>
+                          <property name="row">0</property>
+                          <property name="sticky">nw</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="pygubu.builder.widgets.pathchooserinput" id="s2_in_xl_box" named="True">
+                        <property name="textvariable">string:step2_in_xl</property>
+                        <property name="type">directory</property>
+                        <layout manager="grid">
+                          <property name="column">1</property>
+                          <property name="ipadx">20</property>
+                          <property name="pady">2</property>
+                          <property name="row">1</property>
+                          <property name="sticky">nw</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="pygubu.builder.widgets.pathchooserinput" id="s2_out_box" named="True">
+                        <property name="textvariable">string:step2_out</property>
+                        <property name="type">directory</property>
+                        <layout manager="grid">
+                          <property name="column">1</property>
+                          <property name="ipadx">20</property>
+                          <property name="pady">2</property>
+                          <property name="row">2</property>
+                          <property name="sticky">nw</property>
+                        </layout>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="ttk.Button" id="s2_doit" named="True">
+                    <property name="command" type="command" cbtype="simple">do_step2</property>
+                    <property name="text" translatable="yes">执行</property>
+                    <layout manager="pack">
+                      <property name="side">top</property>
+                    </layout>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="tk.Text" id="logbox" named="True">
+        <property name="autoseparators">false</property>
+        <property name="height">10</property>
+        <property name="width">55</property>
+        <layout manager="grid">
+          <property name="column">0</property>
+          <property name="row">3</property>
+        </layout>
+      </object>
+    </child>
+  </object>
+</interface>
