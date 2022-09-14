@@ -29,10 +29,12 @@ def main_api(im):
     boxes = result[0][0]
 
     texts = []
+    rimg = np.zeros(edge.shape, dtype=np.uint8)
     for box in boxes:
         nrimg = np.zeros(edge.shape, dtype=np.uint8)
         x1, x2, y1, y2 = box
         cv2.rectangle(nrimg, (x1, y1), (x2, y2), (255, 255, 255), -1)
+        cv2.rectangle(rimg, (x1, y1), (x2, y2), (255, 255, 255), -1)
         sdet = np.where(nrimg==255, det, 255)
         sdet = cv2.bitwise_not(sdet)
         sdet = cv2.dilate(sdet, np.ones((3,3), np.uint8), iterations=1)
@@ -40,6 +42,7 @@ def main_api(im):
         stext = cv2.bitwise_not(stext)  # 反相
         texts.append(stext)
 
+    det = np.where(rimg==255, det, 255)
     cover = cv2.dilate(cv2.bitwise_not(det), np.ones((3,3), np.uint8), iterations=1)
 
     return texts, cover
