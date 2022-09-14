@@ -75,11 +75,15 @@ def bucket2info(bucket):
         pos = (bucket[0].axis, bucket[0].top)
     else:
         l_width = [z.width for z in bucket]
+        aw = avg(l_width)
         l_dis = [bucket[i - 1].axis - bucket[i].axis for i in range(1, len(bucket))]
-        lineinfo = [(l_width[i], l_dis[i]) for i in range(len(bucket) - 1)]
-        lineinfo.append((l_width[-1], l_width[-1] * 1.5))
+        #lineinfo = [(l_width[i], l_dis[i]) for i in range(len(bucket) - 1)]
+        #lineinfo.append((l_width[-1], l_width[-1] * 1.5))
+        lineinfo = [(aw, l_dis[i]) for i in range(len(bucket) - 1)]
+        lineinfo.append((aw, l_width[-1] * 1.5))
         l_top = [z.top for z in bucket]
-        at = sum(l_top) / len(l_top)
+        #at = avg(l_top)
+        at = min(l_top)
         pos = (bucket[0].axis, at)
     return {"pos": pos, "lines": lineinfo}
 
@@ -88,7 +92,8 @@ def bucket_rect(bucket):
     bucket = bucket_sort(bucket)
     assert bucket
     l_top = [z.top for z in bucket]
-    t = round(sum(l_top) / len(l_top))
+    #t = round(avg(l_top))
+    t = min(l_top)
     l_bottom = [z.bottom for z in bucket]
     b = max(l_bottom)
     l = bucket[-1].left
@@ -141,48 +146,15 @@ def main_api(texts):
     # 提取文字信息
     zones = [zone(contour=c) for c in contours]
     zones = bucket_sort(zones)
-    #for z in zones:
-    #    z.draw(showc)
-    #    newbucket = True
-    #    for bucket in bucket_shelf:
-    #        if bucket_check(z, bucket):
-    #            bucket.append(z)
-    #            newbucket = False
-    #            break
-    #    if newbucket:
-    #        abucket = [z]
-    #        bucket_shelf.append(abucket)
-    #orphansidx = [i for i in range(len(bucket_shelf)) if len(bucket_shelf[i])==1]
-    #eraseorphan = []
-    #operated = True
-    #while operated:
-    #    operated = False
-    #    for oi in orphansidx:
-    #        z = bucket_shelf[oi][0]
-    #        for ei in range(len(bucket_shelf)):
-    #            if ei==oi:
-    #                continue
-    #            bkt = bucket_shelf[ei]
-    #            if bucket_check(z, bkt):
-    #                operated = True
-    #                bucket_shelf[ei].append(z)
-    #                eraseorphan.append(oi)
-    #                break
-    #    if operated:
-    #        for i in eraseorphan:
-    #            orphansidx.remove(i)
-    #offset = 0
-    #for i in eraseorphan:
-    #    bucket_shelf.pop(i+offset)
-    #    offset -= 1
     for i in range(len(zones)):
         z = zones[i]
         z.draw(showc)
         z.tag(showc, text=str(i))
     matches = [[j for j in range(i+1, len(zones)) if zone_match(zones[i], zones[j])] for i in range(len(zones))]
     r = list(range(len(zones)))
-    print(list(zip(r,matches)))
-    print([z.axis for z in zones])
+    # 如果出错，你可能需要解注释下面两行来查看日志
+    #print(list(zip(r,matches)))
+    #print([z.axis for z in zones])
     chains = []
     while r:
         chain = []
