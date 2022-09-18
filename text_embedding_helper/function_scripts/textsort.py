@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 
-morphclose_iternum = 10
+morphclose_iternum = 15
 x_axis = 0; y_axis = 1
 
 
@@ -26,6 +26,13 @@ def sediment(arr, axis=0):  # “沉淀”，保留备用
     result.append(copy(bucket))
     return result
 
+def rectify(img):
+    rects = np.zeros(img.shape, dtype=np.uint8)
+    contours = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
+    for c in contours:
+        x, y, w, h = cv2.boundingRect(c)
+        cv2.rectangle(rects, (x, y), (x+w, y+h), (255, 255, 255), -1)
+    return rects
 
 def acompare_range(a, b, error=(0.8, 1.25)):  # 带误差地比较a和b
     return a > b * error[0] and a < b * error[1]
@@ -40,21 +47,6 @@ def bucket_sort(bucket):  # 这不是经典的“桶排序”，这只是“排�
 def avg(l):
     return sum(l)/len(l)
 
-def bucket_check(zone, bucket):
-    assert bucket
-    bucket = bucket_sort(bucket)
-    aw = avg([z.width for z in bucket])
-    if not acompare_range(zone.width, aw):
-        return False
-    at = avg([z.top for z in bucket])
-    if not acompare_diff(zone.top, at, aw*2):
-        return False
-    for z in bucket:
-        dis = abs(zone.axis-z.axis)
-        if acompare_range(dis, aw, (0.5, 2)):
-            return True
-    return False
-
 def zone_match(zone1, zone2):
     if not acompare_range(zone1.width, zone2.width):
         return False
@@ -66,6 +58,26 @@ def zone_match(zone1, zone2):
     if not acompare_range(xdis, aw, (0.5, 2.5)):
         return False
     return True
+
+def match2chains(matches):
+    r = list(range(len(matches)))
+    chains = []
+    while r:
+        chain = []
+        idx = r.pop(0)
+        chain.append(idx)
+        nextl = matches[idx]
+        while nextl:
+            idx = nextl[0]
+            if idx not in r:
+                break
+            if idx in chain:
+                break
+            chain.append(idx)
+            r.remove(idx)
+            nextl = matches[idx]
+        chains.append(chain)
+    return chains
 
 def bucket2info(bucket):
     bucket = bucket_sort(bucket)
@@ -86,7 +98,6 @@ def bucket2info(bucket):
         at = min(l_top)
         pos = (bucket[0].axis, at)
     return {"pos": pos, "lines": lineinfo}
-
 
 def bucket_rect(bucket):
     bucket = bucket_sort(bucket)
@@ -131,13 +142,16 @@ class zone:
         return "zone(rect=%s)" % repr(self.rect)
 
 def main_api(texts, rim):
+    if not texts:
+        return [()], np.ones(rim.shape, dtype=np.uint8)*255
     show = np.zeros(texts[0].shape, dtype=np.uint8)
     contours = []
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 5))  # 只在竖直方向闭运算
     bucket_shelf = []
     for img in texts:
         show = np.where(img>0, img, show)
-        imgmor = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel, iterations=morphclose_iternum)
+        imgmor = rectify(img)
+        imgmor = cv2.morphologyEx(imgmor, cv2.MORPH_CLOSE, kernel, iterations=morphclose_iternum)
         contours += cv2.findContours(imgmor, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
 
     showc = cv2.cvtColor(cv2.bitwise_not(show), cv2.COLOR_GRAY2RGB)
@@ -150,26 +164,7 @@ def main_api(texts, rim):
         z.draw(showc)
         z.tag(showc, text=str(i))
     matches = [[j for j in range(i+1, len(zones)) if zone_match(zones[i], zones[j])] for i in range(len(zones))]
-    r = list(range(len(zones)))
-    # 如果出错，你可能需要解注释下面两行来查看日志
-    #print(list(zip(r,matches)))
-    #print([z.axis for z in zones])
-    chains = []
-    while r:
-        chain = []
-        idx = r.pop(0)
-        chain.append(idx)
-        nextl = matches[idx]
-        while nextl:
-            idx = nextl[0]
-            if idx not in r:
-                break
-            if idx in chain:
-                break
-            chain.append(idx)
-            r.remove(idx)
-            nextl = matches[idx]
-        chains.append(chain)
+    chains = match2chains(matches)
     bucket_shelf = [[zones[i] for i in chain] for chain in chains]
 
     # 构造表

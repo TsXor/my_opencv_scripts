@@ -44,4 +44,4 @@ def outer_contours(img):
     return [contours[i] for i in range(len(hier[0])) if hier[0][i][3]==-1]
 
 def immask(img, mask):
-    return cv2.bitwise_and(img, img, mask=mask)
+    return cv2.bitwise_and(img, mask)

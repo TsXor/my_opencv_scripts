@@ -9,8 +9,8 @@ ocr_object = None
 
 # 可调常量
 THRESH_SMALL = 60
-TEXT_SIZE_MIN = (20, 20)  #w>=20 and h>=20
-TEXT_SIZE_MAX = (100, 500)  #w<=100 and h<=500
+TEXT_SIZE_MIN = (15, 15)  #w>=20 and h>=20
+TEXT_SIZE_MAX = (75, 500)  #w<=100 and h<=500
 
 # 根据可调常量生成的具体参数常量
 BLACK_THRESH = THRESH_SMALL
@@ -40,7 +40,7 @@ def rectext(im, det):
     boxes = ocr_object.getbox(det)
 
     texts = []
-    kernel = np.ones((3, 3), np.uint8)
+    kernel = np.ones((5, 5), np.uint8)
     mask = np.zeros(im.shape, dtype=np.uint8)
     for box in boxes:
         smask = np.zeros(im.shape, dtype=np.uint8)

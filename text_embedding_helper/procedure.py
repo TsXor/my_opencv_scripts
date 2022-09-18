@@ -2,6 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 import cv2
 import click, json
+from lib_scripts.cvutils import immask
 
 
 @click.group() # 命令的总入口
@@ -66,9 +67,11 @@ def step2_api(op, xl, psd):
     
     app = ps.Application()
     doc = app.open(op)
+    Pim = Image.open(op)
+    im = np.asarray(Pim)
     xlinfo, maskdat = xl2py(xl, extra=('mask数据',))
     maskdat = tuple(maskdat)[0]
-    ignores = []
+    tmask = np.ones(im.shape, dtype=np.uint8)
     for row in xlinfo:
         nul, text, jsont, tcolor = row
         try:
@@ -76,9 +79,9 @@ def step2_api(op, xl, psd):
         except:
             continue
         if (not text) or text=='IGNORE':
-            rect = jsono["rect"]
-            ignores.append(rect)
             continue
+        rect = jsono["rect"]
+        cv2.rectangle(tmask, rect[0], rect[1], (255,255,255), -1)
         if text=='ERASE':
             continue
         pos = jsono["pos"]
@@ -87,10 +90,10 @@ def step2_api(op, xl, psd):
         lines = [(lines[i], *linfo[i]) for i in range(len(lines))]
         exitcode = mktxlr(lines, pos, 'vertical', rgb=(0,0,0))
     for cover, mcolor in maskdat:
-        for ir in ignores:
-            cv2.rectangle(cover, ir[0], ir[1], (0,0,0), -1)
+        cover = immask(cover, tmask)
         cover = np.expand_dims(cover, axis=2)
-        cover = np.concatenate((mcolor, mcolor, mcolor, cover), axis=-1)
+        chnl = np.ones(cover.shape, dtype=np.uint8)*mcolor
+        cover = np.concatenate((chnl, chnl, chnl, cover), axis=-1)
         # 在图片边角上加两个白色像素点，以防下一步粘贴时ps自动裁剪
         cover[0][0] = (255, 255, 255, 255)
         cover[cover.shape[0]-1][cover.shape[1]-1] = (255, 255, 255, 255)
