@@ -130,7 +130,7 @@ class zone:
     def __repr__(self):
         return "zone(rect=%s)" % repr(self.rect)
 
-def main_api(texts):
+def main_api(texts, rim):
     show = np.zeros(texts[0].shape, dtype=np.uint8)
     contours = []
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 5))  # 只在竖直方向闭运算
@@ -140,8 +140,7 @@ def main_api(texts):
         imgmor = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel, iterations=morphclose_iternum)
         contours += cv2.findContours(imgmor, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
 
-    show = cv2.bitwise_not(show)
-    showc = cv2.cvtColor(show, cv2.COLOR_GRAY2RGB)
+    showc = cv2.cvtColor(cv2.bitwise_not(show), cv2.COLOR_GRAY2RGB)
 
     # 提取文字信息
     zones = [zone(contour=c) for c in contours]
@@ -174,18 +173,13 @@ def main_api(texts):
     bucket_shelf = [[zones[i] for i in chain] for chain in chains]
 
     # 构造表
-    header = [
-        "文字图片",
-        "翻译填这里（行数不得大于原文，无意义就留空）",
-        "文字位置信息（不懂勿动！）",
-    ]
-    sheet = [header,]
+    sheet = []
     for bucket in bucket_shelf:
         info = bucket2info(bucket)
         l, t, w, h = bucket_rect(bucket)
         info.update({'rect':[(l, t), (l+w, t+h)]})
         cv2.rectangle(showc, (l, t), (l+w, t+h), (0, 255, 0), 1)
-        imgslice = show[t:t+h, l:l+w]
+        imgslice = rim[t:t+h, l:l+w]
         row = [imgslice, '', json.dumps(info)]
         sheet.append(row)
 

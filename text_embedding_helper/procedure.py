@@ -25,10 +25,22 @@ def step1_api(op, xl):
     
     Pim = Image.open(op)
     im = np.asarray(Pim)
-    texts, cover = textocr(im)
-    xlsheet, markedtext = textsort(texts)
-    py2xl(xlsheet, xl, (20, 120, 30), extra=(('mask数据', cover),)) # xl is path
-    Pmarkedtext = Image.fromarray(markedtext); Pmarkedtext.show()
+    data = textocr(im)
+    texts, covers, colors = list(zip(*data))
+    xlsheets, markedtexts = list(zip(*[textsort(text, im) for text in texts]))
+    xlsheets = [[(*r, c[0]) for r in x] for x, c in zip(xlsheets, colors)]
+    header = (
+        "文字图片",
+        "翻译填这里（行数不得大于原文，无意义就留空）",
+        "文字位置信息（不懂勿动！）",
+        "文字颜色信息（不懂勿动！）",
+    )
+    xlsheet = sum([[header], *xlsheets], [])
+    erasers = list(zip(*colors))[1]
+    maskdat = list(zip(covers, erasers))
+    py2xl(xlsheet, xl, (20, 120, 30, 30), extra=(('mask数据', maskdat),)) # xl is path
+    for markedtext in markedtexts:
+        Pmarkedtext = Image.fromarray(markedtext); Pmarkedtext.show()
 
 @main.command()
 @click.option('--op', help='input original picture file path', required=True)
@@ -54,37 +66,43 @@ def step2_api(op, xl, psd):
     
     app = ps.Application()
     doc = app.open(op)
-    xlinfo, cover = xl2py(xl, extra=('mask数据',))
-    cover = tuple(cover)[0]
+    xlinfo, maskdat = xl2py(xl, extra=('mask数据',))
+    maskdat = tuple(maskdat)[0]
+    ignores = []
     for row in xlinfo:
-        nul, text, jsont = row
+        nul, text, jsont, tcolor = row
         try:
             jsono = json.loads(jsont)
         except:
             continue
-        if not text:
+        if (not text) or text=='IGNORE':
             rect = jsono["rect"]
-            cv2.rectangle(cover, rect[0], rect[1], (0,0,0), -1)
+            ignores.append(rect)
+            continue
+        if text=='ERASE':
             continue
         pos = jsono["pos"]
         linfo = jsono["lines"]
         lines = text.split('\n')
         lines = [(lines[i], *linfo[i]) for i in range(len(lines))]
         exitcode = mktxlr(lines, pos, 'vertical', rgb=(0,0,0))
-    cover = np.expand_dims(cover, axis=2)
-    cover = np.concatenate((cover, cover, cover, cover), axis=-1)
-    # 在图片边角上加两个白色像素点，以防下一步粘贴时ps自动裁剪
-    cover[0][0] = (255, 255, 255, 255)
-    cover[cover.shape[0]-1][cover.shape[1]-1] = (255, 255, 255, 255)
-    Pcover = Image.fromarray(cover)
-    Pcover.save(psd+'.msk.png')
-    mp = pathlib.Path(psd+'.msk.png')
-    paste(app, mp)
-    moveto(1)
+    for cover, mcolor in maskdat:
+        for ir in ignores:
+            cv2.rectangle(cover, ir[0], ir[1], (0,0,0), -1)
+        cover = np.expand_dims(cover, axis=2)
+        cover = np.concatenate((mcolor, mcolor, mcolor, cover), axis=-1)
+        # 在图片边角上加两个白色像素点，以防下一步粘贴时ps自动裁剪
+        cover[0][0] = (255, 255, 255, 255)
+        cover[cover.shape[0]-1][cover.shape[1]-1] = (255, 255, 255, 255)
+        Pcover = Image.fromarray(cover)
+        Pcover.save(psd+'.msk.png')
+        mp = pathlib.Path(psd+'.msk.png')
+        paste(app, mp)
+        moveto(1)
+        mp.unlink()
     options = ps.PhotoshopSaveOptions()
     doc.saveAs(psd, options) # psd is path 
     doc.close()
-    mp.unlink()
 
 @main.command()
 @click.option('--op', help='input original picture file path', required=True)

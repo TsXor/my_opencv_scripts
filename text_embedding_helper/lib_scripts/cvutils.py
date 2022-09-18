@@ -2,6 +2,9 @@ import cv2
 #import skimage
 import numpy as np
 
+BLACK = 0
+WHITE = 255
+
 def blur(img, ksize=15):
     assert ksize>=1
     ksize = round((ksize-1)/2)*2+1
@@ -40,3 +43,5 @@ def outer_contours(img):
     contours, hier = cv2.findContours(img, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
     return [contours[i] for i in range(len(hier[0])) if hier[0][i][3]==-1]
 
+def immask(img, mask):
+    return cv2.bitwise_and(img, img, mask=mask)

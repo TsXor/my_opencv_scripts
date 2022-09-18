@@ -1,48 +1,77 @@
 import cv2
 import numpy as np
+from PIL import Image
 from lib_scripts.cvutils import *
-import easyocr
-reader = easyocr.Reader(['ja'], recognizer=False) # this needs to run only once to load the model into memory
+import lib_scripts.UOCRbackend as UOCR
 
+ocr_name = None
+ocr_object = None
 
-def main_api(im):
-    edge = canny_bs(im, 245, 250, 50)
-    kernel = np.ones((4, 4), np.uint8)
-    edge = cv2.dilate(edge, np.ones((4,4), np.uint8), iterations=1)
-    rimg1 = np.zeros(edge.shape, dtype=np.uint8)
-    for c in outer_contours(edge):
-        x, y, w, h = cv2.boundingRect(c)
-        if not (w<=80 and h<=500):
-            continue
-        cv2.drawContours(rimg1, [c], -1, (255,255,255), -1)
-    rimg1 = cv2.dilate(rimg1, np.ones((4,4), np.uint8), iterations=2)
-    rimg2 = np.zeros(edge.shape, dtype=np.uint8)
-    for c in outer_contours(rimg1):
-        x, y, w, h = cv2.boundingRect(c)
-        if (w<=20 and h<=20):
-            continue
-        cv2.drawContours(rimg2, [c], -1, (255,255,255), -1)
-    det = np.where(rimg2==255, im, 255)
-    det = np.where(det>=128, 255, 0).astype('uint8')
+# 可调常量
+THRESH_SMALL = 60
+TEXT_SIZE_MIN = (20, 20)  #w>=20 and h>=20
+TEXT_SIZE_MAX = (100, 500)  #w<=100 and h<=500
 
-    result = reader.detect(det)
-    boxes = result[0][0]
+# 根据可调常量生成的具体参数常量
+BLACK_THRESH = THRESH_SMALL
+WHITE_THRESH = 255 - THRESH_SMALL
+TEXT_SELECTOR_MIN = lambda c: (size(c)[0]>=TEXT_SIZE_MIN[0] and size(c)[1]>=TEXT_SIZE_MIN[1])
+TEXT_SELECTOR_MAX = lambda c: (size(c)[0]<=TEXT_SIZE_MAX[0] and size(c)[1]<=TEXT_SIZE_MAX[1])
+
+def select_contours(img, selector=(lambda x: True), fill=True):
+    cnts = outer_contours(img)
+    cnts = [c for c in cnts if selector(c)]
+    selected = np.zeros(img.shape, dtype=np.uint8)
+    fillp = -1 if fill else 1
+    cv2.drawContours(selected, cnts, -1, (255,255,255), fillp)
+    return selected
+
+def size(c):  #仅仅是为了写起来短 :)
+    x, y, w, h = cv2.boundingRect(c)
+    return (w, h)
+
+def load(ocr, lang):
+    global ocr_name, ocr_object
+    ocr_name = ocr
+    ocr_class = getattr(UOCR, ocr)
+    ocr_object = ocr_class(lang=lang)
+
+def rectext(im, det):
+    boxes = ocr_object.getbox(det)
 
     texts = []
-    rimg = np.zeros(edge.shape, dtype=np.uint8)
+    kernel = np.ones((3, 3), np.uint8)
+    mask = np.zeros(im.shape, dtype=np.uint8)
     for box in boxes:
-        nrimg = np.zeros(edge.shape, dtype=np.uint8)
+        smask = np.zeros(im.shape, dtype=np.uint8)
         x1, x2, y1, y2 = box
-        cv2.rectangle(nrimg, (x1, y1), (x2, y2), (255, 255, 255), -1)
-        cv2.rectangle(rimg, (x1, y1), (x2, y2), (255, 255, 255), -1)
-        sdet = np.where(nrimg==255, det, 255)
-        sdet = cv2.bitwise_not(sdet)
-        sdet = cv2.dilate(sdet, np.ones((3,3), np.uint8), iterations=1)
-        stext = np.where(sdet==255, im, 255)
-        stext = cv2.bitwise_not(stext)  # 反相
+        cv2.rectangle(smask, (x1, y1), (x2, y2), (255, 255, 255), -1)
+        cv2.rectangle(mask, (x1, y1), (x2, y2), (255, 255, 255), -1)
+        sdet = immask(det, smask)
+        sdet = cv2.dilate(sdet, kernel)
+        stext = immask(im, sdet)
         texts.append(stext)
-
-    det = np.where(rimg==255, det, 255)
-    cover = cv2.dilate(cv2.bitwise_not(det), np.ones((3,3), np.uint8), iterations=1)
+    det = immask(det, mask)
+    cover = cv2.dilate(det, kernel)
 
     return texts, cover
+
+
+color_ranges = [(0, BLACK_THRESH), (WHITE_THRESH, 255)]
+txtcolors = [(0, 255), (255, 0)]
+def main_api(im, ocr='easyocr', lang='ja'):
+    if ocr_name != ocr:
+        load(ocr, lang)
+
+    edge = canny_bs(im, 245, 250, 50)
+    kernel = np.ones((3, 3), np.uint8)
+    edge = cv2.morphologyEx(edge, cv2.MORPH_CLOSE, kernel)
+    edge_mask = select_contours(edge, TEXT_SELECTOR_MAX)
+    edge_mask = cv2.dilate(edge_mask, kernel, iterations=2)
+    edge_mask = select_contours(edge_mask, TEXT_SELECTOR_MIN)
+
+    im_queue = [immask((cim := cv2.inRange(im, *cr)), select_contours(cim, TEXT_SELECTOR_MAX)) for cr in color_ranges]
+    det_queue = [immask(sim, edge_mask) for sim in im_queue]
+    results = [(*rectext(sim, sdet), txtcolor) for sim, sdet, txtcolor in zip(im_queue, det_queue, txtcolors)]
+
+    return results
